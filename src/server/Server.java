@@ -1,9 +1,5 @@
 package server;
 
-import org.w3c.dom.ls.LSOutput;
-
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -32,18 +28,22 @@ public class Server {
                             while (true){
                                 String request = currentUser.getIn().readUTF(); //Ожидаем сообщение от клиента
                                 System.out.println(userName+": "+request);
-                                for (User user: users) {
-                                    if(currentUser.getSocket().equals(user.getSocket())) continue;
-                                    user.getOut().writeUTF(userName+": "+request);
-                                }
+                                if(request.equals("/onlineUsers")){
+                                    String usersName = "";
+                                    for (User user: users) usersName += user.getUserName()+", ";
+                                    currentUser.getOut().writeUTF(usersName);
+                                }else
+                                    for (User user: users) {
+                                        if(currentUser.getSocket().equals(user.getSocket())) continue;
+                                        user.getOut().writeUTF(userName+": "+request);
+                                    }
                             }
                         } catch (IOException e) {
                             users.remove(currentUser);
                             System.out.println(currentUser.getUserName()+" покинул чат");
                             try {
-                                for (User user: users) {
+                                for (User user: users)
                                     user.getOut().writeUTF(currentUser.getUserName()+" покинул чат");
-                                }
                             }catch (IOException ex){
                                 ex.printStackTrace();
                             }
