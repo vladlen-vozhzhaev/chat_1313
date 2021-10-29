@@ -12,32 +12,41 @@ import java.util.ArrayList;
 public class Server {
     public static void main(String[] args) {
         try {
-            ArrayList<Socket> usersSocket = new ArrayList<>();
+            ArrayList<User> users = new ArrayList<>();
             ServerSocket serverSocket = new ServerSocket(8178);
             System.out.println("Сервер запущен");
             while (true){
                 Socket socket = serverSocket.accept(); // Ожидаем подключения клиента
-                usersSocket.add(socket);
+                User currentUser = new User(socket);
+                users.add(currentUser);
                 System.out.println("Клиент подключился");
                 Thread thread = new Thread(new Runnable() {
                     @Override
                     public void run() {
                         try {
-                            DataInputStream in = new DataInputStream(socket.getInputStream());
-                            DataOutputStream out = new DataOutputStream(socket.getOutputStream());
-                            // Спрашиваете имя клиента
-                            // Приветсвуете клиента на сервере
-                            // Записываете его имя (куда?)
+                            currentUser.getOut().writeUTF("Введите имя: ");// Спрашиваете имя клиента
+                            String userName = currentUser.getIn().readUTF(); // Записываете его имя (куда?)
+                            currentUser.setUserName(userName);
+                            currentUser.getOut().writeUTF("Добро пожаловать на сервер");// Приветсвуете клиента на сервере
+
                             while (true){
-                                String request = in.readUTF(); //Ожидаем сообщение от клиента
-                                System.out.println("От клиента: "+request);
-                                for (Socket socket1: usersSocket) {
-                                    DataOutputStream out1 = new DataOutputStream(socket1.getOutputStream());
-                                    out1.writeUTF(request);
+                                String request = currentUser.getIn().readUTF(); //Ожидаем сообщение от клиента
+                                System.out.println(userName+": "+request);
+                                for (User user: users) {
+                                    if(currentUser.getSocket().equals(user.getSocket())) continue;
+                                    user.getOut().writeUTF(userName+": "+request);
                                 }
                             }
                         } catch (IOException e) {
-                            e.printStackTrace();
+                            users.remove(currentUser);
+                            System.out.println(currentUser.getUserName()+" покинул чат");
+                            try {
+                                for (User user: users) {
+                                    user.getOut().writeUTF(currentUser.getUserName()+" покинул чат");
+                                }
+                            }catch (IOException ex){
+                                ex.printStackTrace();
+                            }
                         }
                     }
                 });

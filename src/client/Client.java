@@ -21,7 +21,7 @@ public class Client {
                     try {
                         while (true){
                             String response = in.readUTF();
-                            System.out.println("Ответ от сервера "+response);
+                            System.out.println(response);
                         }
                     } catch (IOException e) {
                         e.printStackTrace();
